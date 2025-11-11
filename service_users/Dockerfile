@@ -2,7 +2,8 @@ FROM golang:1.21-alpine AS build
 RUN apk add --no-cache git
 WORKDIR /src
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o /usr/local/bin/service_users ./... || true
+RUN go mod download
+RUN CGO_ENABLED=0 GOOS=linux go build -o /usr/local/bin/service_users ./...
 
 FROM alpine:3.18
 RUN apk add --no-cache ca-certificates

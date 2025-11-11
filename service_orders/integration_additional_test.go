@@ -87,6 +87,23 @@ func TestOrderStatusChangeAndDelete(t *testing.T) {
 		t.Fatalf("status change failed: %d %s", w.Code, w.Body.String())
 	}
 
+	// verify status changed to cancelled via GET
+	req = httptest.NewRequest(http.MethodGet, "/v1/orders/"+id, nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("get after status failed: %d %s", w.Code, w.Body.String())
+	}
+	var got map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		t.Fatalf("invalid json after status: %v", err)
+	}
+	d := got["data"].(map[string]interface{})
+	if d["status"].(string) != "cancelled" {
+		t.Fatalf("expected status cancelled, got %v", d["status"])
+	}
+
 	// delete order
 	req = httptest.NewRequest(http.MethodDelete, "/v1/orders/"+id, nil)
 	req.Header.Set("Authorization", "Bearer "+token)

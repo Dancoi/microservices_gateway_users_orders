@@ -147,20 +147,20 @@ paths:
           $ref: '#/components/responses/BadRequest'
 
     get:
-      summary: List orders for current user
+      summary: List orders for current user (paginated)
       security:
         - bearerAuth: []
       parameters:
         - in: query
-          name: limit
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: size
           schema:
             type: integer
             default: 20
-        - in: query
-          name: offset
-          schema:
-            type: integer
-            default: 0
       responses:
         '200':
           description: Orders
@@ -175,6 +175,8 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Order'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
 
   /orders/{orderId}:
     get:
@@ -230,7 +232,6 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
 
-  /orders/{orderId}:
     delete:
       summary: Delete order
       security:
@@ -357,10 +358,24 @@ components:
       required: [items, total]
       properties:
         items:
-          type: object
-          description: JSON object with items array
+          description: JSON payload describing items. May be provided as a JSON object or a JSON-encoded string.
+          oneOf:
+            - type: object
+            - type: string
         total:
           type: number
+
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        size:
+          type: integer
+        total_pages:
+          type: integer
 
     Order:
       type: object
@@ -394,6 +409,24 @@ components:
   responses:
     Unauthorized:
       description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Bad request
       content:
         application/json:
           schema:

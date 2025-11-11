@@ -18,7 +18,6 @@
 - `service_users` и `service_orders` подключаются к Postgres через переменную `DATABASE_DSN`.
 - `api_gateway` слушает порт `8000` на хосте (проброшен `8000:8000`).
 
-docker-compose up --build
 Запуск локально (Docker)
 ------------------------
 1. В корне репозитория запустите (Linux / macOS):
@@ -31,6 +30,13 @@ docker-compose up --build
 2. После сборки и запуска сервисы будут доступны по умолчанию:
 - API Gateway: http://localhost:8000
 - Postgres: localhost:5432
+
+Если хотите запустить в фоне:
+
+```bash
+docker-compose up --build -d
+docker-compose logs -f api_gateway
+```
 
 Переменные окружения
 --------------------
@@ -98,6 +104,26 @@ CI (рекомендация)
 - Добавить CI workflow (я могу создать `.github/workflows/ci.yml`).
 - Добавить README секции: Endpoints (пример запросов), Swagger / how to run API docs.
 - Интегрировать структурное логирование (zerolog) и OpenTelemetry для трассировки.
+
+Быстрые примеры (curl)
+----------------------
+# Регистрация
+curl -X POST http://localhost:8000/v1/users/register -H 'Content-Type: application/json' -d '{"email":"u@example.com","password":"password","name":"User"}'
+
+# Логин
+curl -X POST http://localhost:8000/v1/users/login -H 'Content-Type: application/json' -d '{"email":"u@example.com","password":"password"}'
+
+# Создать заказ (замените $TOKEN на полученный токен)
+curl -X POST http://localhost:8000/v1/orders/ -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"items":"[]","total":10.5}'
+
+OpenAPI и тесты
+---------------
+- OpenAPI: `docs/openapi-v1.yaml` — можно загрузить в Swagger UI или Postman.
+- Postman collection: `docs/postman_collection.json`.
+
+Dockerfiles
+-----------
+Dockerfiles в сервисах обновлены: они выполняют `go mod download` перед сборкой, и сборка теперь завершается с ошибкой при неудаче (убран `|| true`). Это делает сборку надёжнее в CI.
 
 Связь
 -----
