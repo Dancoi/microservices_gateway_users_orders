@@ -1,27 +1,55 @@
 services:
-  api_gateway:
-    build: api_gateway
-    ports:
-      - "8000:8000"
+  postgres:
+    image: postgres:15-alpine
     environment:
-      - NODE_ENV=production
-    networks:
-      - app-network
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
 
   service_users:
-    build: service_users
+    build: ./service_users
     environment:
-      - NODE_ENV=production
+      - DATABASE_DSN=host=postgres user=postgres password=postgres dbname=app_db port=5432 sslmode=disable
+      - JWT_SECRET=dev-secret
+      - PORT=8000
+    depends_on:
+      - postgres
     networks:
       - app-network
 
   service_orders:
-    build: service_orders
+    build: ./service_orders
     environment:
-      - NODE_ENV=production
+      - DATABASE_DSN=host=postgres user=postgres password=postgres dbname=app_db port=5432 sslmode=disable
+      - JWT_SECRET=dev-secret
+      - PORT=8000
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  api_gateway:
+    build: ./api_gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - USERS_URL=http://service_users:8000
+      - ORDERS_URL=http://service_orders:8000
+      - JWT_SECRET=dev-secret
+      - PORT=8000
+    depends_on:
+      - service_users
+      - service_orders
     networks:
       - app-network
 
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  pgdata:
