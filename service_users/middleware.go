@@ -9,6 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
@@ -112,4 +114,21 @@ func CORSMiddleware() gin.HandlerFunc {
 
 func generateRequestID() string {
 	return uuid.New().String()
+}
+
+func LoggingMiddleware() gin.HandlerFunc {
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMicro
+	logger := log.Logger
+	return func(c *gin.Context) {
+		start := time.Now()
+		rid := c.GetString("X-Request-ID")
+		c.Next()
+		latency := time.Since(start)
+		logger.Info().Str("rid", rid).
+			Str("method", c.Request.Method).
+			Str("path", c.Request.RequestURI).
+			Int("status", c.Writer.Status()).
+			Int64("latency_ms", latency.Milliseconds()).
+			Msg("http_request")
+	}
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -42,12 +43,32 @@ func RegisterOrderHandlers(r *gin.Engine, db *gorm.DB) {
 	})
 
 	ord.GET("/", OrderAuthMiddleware(), func(c *gin.Context) {
-		// list orders for current user
+		// list orders for current user with pagination
 		uid := c.GetString("user_id")
 		parsed, _ := uuid.Parse(uid)
+
+		// pagination params
+		page := 1
+		size := 20
+		if p := c.Query("page"); p != "" {
+			if pp, err := strconv.Atoi(p); err == nil && pp > 0 {
+				page = pp
+			}
+		}
+		if s := c.Query("size"); s != "" {
+			if ss, err := strconv.Atoi(s); err == nil && ss > 0 && ss <= 100 {
+				size = ss
+			}
+		}
+
+		var total int64
+		db.Model(&Order{}).Where("user_id = ?", parsed).Count(&total)
 		var orders []Order
-		db.Where("user_id = ?", parsed).Find(&orders)
-		c.JSON(http.StatusOK, gin.H{"success": true, "data": orders})
+		db.Where("user_id = ?", parsed).Limit(size).Offset((page - 1) * size).Find(&orders)
+
+		totalPages := int((total + int64(size) - 1) / int64(size))
+		meta := gin.H{"total": total, "page": page, "size": size, "total_pages": totalPages}
+		c.JSON(http.StatusOK, gin.H{"success": true, "data": orders, "meta": meta})
 	})
 
 	ord.GET("/:orderId", OrderAuthMiddleware(), func(c *gin.Context) {

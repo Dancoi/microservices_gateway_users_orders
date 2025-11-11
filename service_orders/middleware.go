@@ -8,6 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 var jwtSecretOrders = []byte(getEnvOrders("JWT_SECRET", "dev-secret"))
@@ -86,4 +88,24 @@ func CORSMiddleware() gin.HandlerFunc {
 
 func generateRequestID() string {
 	return strings.ReplaceAll(time.Now().Format(time.RFC3339Nano), ":", "-")
+}
+
+func LoggingMiddleware() gin.HandlerFunc {
+	// configure zerolog to write to stdout
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMicro
+	logger := log.Logger
+	return func(c *gin.Context) {
+		start := time.Now()
+		rid := c.GetString("X-Request-ID")
+		// process
+		c.Next()
+		// after
+		latency := time.Since(start)
+		logger.Info().Str("rid", rid).
+			Str("method", c.Request.Method).
+			Str("path", c.Request.RequestURI).
+			Int("status", c.Writer.Status()).
+			Int64("latency_ms", latency.Milliseconds()).
+			Msg("http_request")
+	}
 }

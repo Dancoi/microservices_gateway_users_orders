@@ -11,6 +11,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"golang.org/x/time/rate"
 )
 
@@ -28,6 +30,7 @@ func main() {
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.Use(RequestID())
+	r.Use(RequestLogger())
 	r.Use(CORSMiddleware())
 
 	// rate limiter per IP
@@ -81,6 +84,8 @@ func proxyTo(c *gin.Context, backend string) {
 	if req.Header.Get("X-Request-ID") == "" {
 		req.Header.Set("X-Request-ID", c.GetString("X-Request-ID"))
 	}
+	// log outgoing proxy
+	log.Info().Str("rid", c.GetString("X-Request-ID")).Str("to", backend+c.Request.RequestURI).Msg("proxy_request")
 	// JWT validation on protected paths (simple: only /users/register and /users/login public)
 	if isProtected(c.Request.RequestURI) {
 		auth := c.GetHeader("Authorization")
@@ -145,6 +150,22 @@ func RequestID() gin.HandlerFunc {
 		c.Writer.Header().Set("X-Request-ID", rid)
 		c.Set("X-Request-ID", rid)
 		c.Next()
+	}
+}
+
+func RequestLogger() gin.HandlerFunc {
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMicro
+	logger := log.Logger
+	return func(c *gin.Context) {
+		start := time.Now()
+		rid := c.GetString("X-Request-ID")
+		logger.Info().Str("rid", rid).Str("method", c.Request.Method).Str("path", c.Request.RequestURI).Msg("incoming_request")
+		c.Next()
+		latency := time.Since(start)
+		logger.Info().Str("rid", rid).
+			Int("status", c.Writer.Status()).
+			Int64("latency_ms", latency.Milliseconds()).
+			Msg("request_done")
 	}
 }
 
