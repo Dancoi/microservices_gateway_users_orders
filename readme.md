@@ -18,12 +18,13 @@
 - `service_users` и `service_orders` подключаются к Postgres через переменную `DATABASE_DSN`.
 - `api_gateway` слушает порт `8000` на хосте (проброшен `8000:8000`).
 
+docker-compose up --build
 Запуск локально (Docker)
 ------------------------
-1. В корне репозитория запустите:
+1. В корне репозитория запустите (Linux / macOS):
 
-```powershell
-# в PowerShell
+```bash
+# в терминале (bash/zsh)
 docker-compose up --build
 ```
 
@@ -38,37 +39,42 @@ docker-compose up --build
 - `JWT_SECRET` — секрет для подписи JWT (в compose задан `dev-secret`).
 - `PORT` — порт, на котором запускается сервис (по умолчанию 8000).
 
+go mod tidy
 Запуск отдельных сервисов локально (без Docker)
 ----------------------------------------------
 Для разработки и тестов можно запускать сервисы напрямую через `go run`.
-Пример:
+Примеры для Linux / macOS (bash):
 
-```powershell
-Set-Location -Path .\service_users
+```bash
+cd service_users
 # установить зависимости
 go mod tidy
-# запустить сервис
-$env:DATABASE_DSN = 'host=localhost user=postgres password=postgres dbname=app_db port=5432 sslmode=disable'
-$env:JWT_SECRET = 'dev-secret'
+# экспортировать переменные окружения и запустить сервис
+export DATABASE_DSN='host=localhost user=postgres password=postgres dbname=app_db port=5432 sslmode=disable'
+export JWT_SECRET='dev-secret'
 go run .
 ```
+
+Если используете PowerShell на Windows, оставлен старый пример внизу.
 
 Тесты
 -----
 - Интеграционные тесты написаны с использованием `net/http/httptest` и in-memory SQLite.
 - В тестах используется pure-Go драйвер SQLite `github.com/glebarez/sqlite` — это позволяет запускать тесты в средах с CGO disabled (например, CI).
 
-Запуск тестов для сервиса (пример для PowerShell):
+Запуск тестов для сервиса (Linux / macOS):
 
-```powershell
+```bash
 # service_users
-Set-Location -Path .\service_users
+cd service_users
 go test ./...
 
 # service_orders
-Set-Location -Path .\service_orders
+cd ../service_orders
 go test ./...
 ```
+
+Пример для PowerShell (Windows) оставлен ниже, если потребуется.
 
 CI (рекомендация)
 -----------------
