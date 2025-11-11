@@ -99,12 +99,6 @@ CI (рекомендация)
 - OpenAPI спецификация находится в `docs/openapi-v1.yaml`.
 - Postman коллекция находится в `docs/postman_collection.json`.
 
-Дальше (рекомендации)
---------------------
-- Добавить CI workflow (я могу создать `.github/workflows/ci.yml`).
-- Добавить README секции: Endpoints (пример запросов), Swagger / how to run API docs.
-- Интегрировать структурное логирование (zerolog) и OpenTelemetry для трассировки.
-
 Быстрые примеры (curl)
 ----------------------
 # Регистрация
@@ -121,13 +115,3 @@ OpenAPI и тесты
 - OpenAPI: `docs/openapi-v1.yaml` — можно загрузить в Swagger UI или Postman.
 - Postman collection: `docs/postman_collection.json`.
 
-Dockerfiles
------------
-Dockerfiles в сервисах обновлены: они выполняют `go mod download` перед сборкой, и сборка теперь завершается с ошибкой при неудаче (убран `|| true`). Это делает сборку надёжнее в CI.
-
-Связь
------
-Если нужно — могу автоматически создать:
-- README с примерами запросов (curl/PowerShell) и HTTP response samples;
-- GitHub Actions workflow для автоматизации тестов;
-- Дополнительную документацию для деплоя.
